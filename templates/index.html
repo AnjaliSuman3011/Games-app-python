@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Online Chess</title>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <style>
+       #board {
+            display: grid;
+            grid-template-columns: repeat(8, 50px);
+            grid-template-rows: repeat(8, 50px);
+            gap: 1px;
+        }
+        #board div {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #000;
+        }
+    </style>
+</head>
+<body>
+    <div id="game">
+        <h1>Chess Game</h1>
+        <div id="board"></div>
+        <button onclick="createGame()">Create Game</button>
+    </div>
+
+    <script>
+        const socket = io('http://localhost:5000');
+
+        function createGame() {
+            fetch('/games', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({player1: 'player1', player2: 'player2'})
+            })
+            .then(response => response.json())
+            .then(data => {
+                joinGame(data.game_id);
+            });
+        }
+
+        function joinGame(game_id) {
+            socket.emit('join', {game_id: game_id});
+            socket.on('update', data => {
+                renderBoard(data.board);
+            });
+        }
+
+        function renderBoard(board) {
+            const boardDiv = document.getElementById('board');
+            boardDiv.innerHTML = '';
+            for (let row of board) {
+                let rowDiv = document.createElement('div');
+                for (let cell of row) {
+                    let cellDiv = document.createElement('div');
+                    cellDiv.textContent = cell;
+                    rowDiv.appendChild(cellDiv);
+                }
+                boardDiv.appendChild(rowDiv);
+            }
+        }
+    </script>
+</body>
+</html>
